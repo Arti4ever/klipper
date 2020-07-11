@@ -611,3 +611,11 @@ been enabled:
     of SHAPER_TYPE_X and SHAPER_TYPE_Y parameters. See
     [example-extras.cfg](https://github.com/KevinOConnor/klipper/tree/master/config/example-extras.cfg)
     for more details on each of these parameters.
+
+## Octoprint REST API integration
+
+The following command is available when the "octoprint" config
+section is enabled.
+- `OCTOPRINT PRINT_FILE=<resource>`: Starts printing the file with the given
+  handle. The handle is returned by Octoprint in `refs/resource` key when
+  querying the file list.
