@@ -618,15 +618,17 @@ class MenuOctoprintList(MenuList):
 
     def _populate(self):
         super(MenuOctoprintList, self)._populate()
-        logging.info("octoprint populate !")
         octoprint = self.manager.printer.lookup_object('octoprint', None)
         if octoprint is not None:
             files = octoprint.list_files()
             for name, resource in files:
+                gcode = [
+                    'OCTOPRINT PRINT_FILE=%s' % resource, "{menu.exit()}"
+                ]
                 self.insert_item(self.manager.menuitem_from({
                         'type': 'command',
                         'name': self.manager.asliteral(name),
-                        'gcode': 'OCTOPRINT PRINT_FILE=%s' % resource
+                        'gcode': "\n".join(gcode)
                 }))
 
 menu_items = {
