@@ -673,13 +673,10 @@ class MenuOctoprintList(MenuList):
             files = octoprint.list_files()
             for name, resource in files:
                 gcode = [
-                    'OCTOPRINT PRINT_FILE=%s' % resource, "{menu.exit()}"
+                    'OCTOPRINT PRINT_FILE=%s' % str(resource), '{ menu.exit() }'
                 ]
-                self.insert_item(self.manager.menuitem_from({
-                        'type': 'command',
-                        'name': self.manager.asliteral(name),
-                        'gcode': "\n".join(gcode)
-                }))
+                self.insert_item(self.manager.menuitem_from(
+                    'command', name=name, gcode="\n".join(gcode)))
 
 menu_items = {
     'disabled': MenuDisabled,
