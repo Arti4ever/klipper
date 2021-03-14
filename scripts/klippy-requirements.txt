@@ -7,3 +7,4 @@ pyserial==3.4
 greenlet==0.4.15
 Jinja2==2.10.1
 requests==2.12.4
+python-can==3.3.4
