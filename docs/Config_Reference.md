@@ -13,11 +13,6 @@ Klipper and choosing an initial config file.
 Many config options require the name of a micro-controller pin.
 Klipper uses the hardware names for these pins - for example `PA4`.
 
-For AVR micro-controllers one may also use an Arduino alias (such as
-"ar29" or "analog3"). In order to use Arduino names, the `pin_map`
-variable in the `[mcu]` section must be present and have a value of
-`arduino`.
-
 Pin names may be preceded by `!` to indicate that a reverse polarity
 should be used (eg, trigger on low instead of high).
 
@@ -49,9 +44,6 @@ serial:
 #canbus_interface:
 #   If using a device connected to a CAN bus then this sets the CAN
 #   network interface to use. The default is 'can0'.
-#pin_map:
-#   This option may be used to enable Arduino pin name aliases. The
-#   default is to not enable the aliases.
 #restart_method:
 #   This controls the mechanism the host will use to reset the
 #   micro-controller. The choices are 'arduino', 'cheetah', 'rpi_usb',
@@ -2039,13 +2031,13 @@ sensor_pin:
 #   name in the above list.
 ```
 
-## BME280 temperature sensor
+## BMP280/BME280/BME680 temperature sensor
 
-BME280 two wire interface (I2C) environmental sensor. Note that this
-sensor is not intended for use with extruders and heater beds, but
-rather for monitoring ambient temperature (C), pressure (hPa), and
-relative humidity. See
-[sample-macros.cfg](../config/sample-macros.cfg) for a gcode_macro
+BMP280/BME280/BME680 two wire interface (I2C) environmental sensors.
+Note that thoose sensors aee not intended for use with extruders and
+heater beds, but rather for monitoring ambient temperature (C),
+pressure (hPa), relative humidity and in case of the BME680 gas level.
+See [sample-macros.cfg](../config/sample-macros.cfg) for a gcode_macro
 that may be used to report pressure and humidity in addition to
 temperature.
 
@@ -2537,6 +2529,13 @@ pin:
 #shutdown_value:
 #   The value to set the pin to on an MCU shutdown event. The default
 #   is 0 (for low voltage).
+#maximum_mcu_duration:
+#   The maximum duration a non-shutdown value may be driven by the MCU
+#   without an acknowledge from the host.
+#   If host can not keep up with an update, the MCU will shutdown
+#   and set all pins to their respective shutdown values.
+#   Default: 0 (disabled)
+#   Usual values are around 5 seconds.
 #cycle_time: 0.100
 #   The amount of time (in seconds) per PWM cycle. It is recommended
 #   this be 10 milliseconds or greater when using software based PWM.
@@ -2658,10 +2657,11 @@ run_current:
 #diag0_pin:
 #diag1_pin:
 #   The micro-controller pin attached to one of the DIAG lines of the
-#   TMC2130 chip. Only a single diag pin should be specified.
-#   Setting this creates a "tmc2130_stepper_x:virtual_endstop" virtual
-#   pin which may be used as the stepper's endstop_pin. Doing this
-#   enables "sensorless homing". (Be sure to also set driver_SGT to an
+#   TMC2130 chip. Only a single diag pin should be specified. The pin
+#   is "active low" and is thus normally prefaced with "^!". Setting
+#   this creates a "tmc2130_stepper_x:virtual_endstop" virtual pin
+#   which may be used as the stepper's endstop_pin. Doing this enables
+#   "sensorless homing". (Be sure to also set driver_SGT to an
 #   appropriate sensitivity value.) The default is to not enable
 #   sensorless homing.
 ```
@@ -2766,11 +2766,12 @@ run_current:
 #   above list.
 #diag_pin:
 #   The micro-controller pin attached to the DIAG line of the TMC2209
-#   chip. Setting this creates a "tmc2209_stepper_x:virtual_endstop"
-#   virtual pin which may be used as the stepper's endstop_pin. Doing
-#   this enables "sensorless homing". (Be sure to also set
-#   driver_SGTHRS to an appropriate sensitivity value.) The default is
-#   to not enable sensorless homing.
+#   chip. The pin is normally prefaced with "^" to enable a pullup.
+#   Setting this creates a "tmc2209_stepper_x:virtual_endstop" virtual
+#   pin which may be used as the stepper's endstop_pin. Doing this
+#   enables "sensorless homing". (Be sure to also set driver_SGTHRS to
+#   an appropriate sensitivity value.) The default is to not enable
+#   sensorless homing.
 ```
 
 ## [tmc2660]
@@ -2923,10 +2924,11 @@ run_current:
 #diag0_pin:
 #diag1_pin:
 #   The micro-controller pin attached to one of the DIAG lines of the
-#   TMC5160 chip. Only a single diag pin should be specified.
-#   Setting this creates a "tmc5160_stepper_x:virtual_endstop" virtual
-#   pin which may be used as the stepper's endstop_pin. Doing this
-#   enables "sensorless homing". (Be sure to also set driver_SGT to an
+#   TMC5160 chip. Only a single diag pin should be specified. The pin
+#   is "active low" and is thus normally prefaced with "^!". Setting
+#   this creates a "tmc5160_stepper_x:virtual_endstop" virtual pin
+#   which may be used as the stepper's endstop_pin. Doing this enables
+#   "sensorless homing". (Be sure to also set driver_SGT to an
 #   appropriate sensitivity value.) The default is to not enable
 #   sensorless homing.
 ```
@@ -3461,6 +3463,34 @@ information.
 #   provided.
 ```
 
+## [filament_motion_sensor]
+
+Filament Motion Sensor. Support for filament insert and runout
+detection using an encoder that toggles the output pin during filament
+movement through the sensor.
+
+See the [command reference](G-Codes.md#filament-sensor) for more
+information.
+
+```
+[filament_motion_sensor my_sensor]
+detection_length: 7.0
+#   The minimum length of filament pulled through the sensor to trigger
+#   a state change on the switch_pin
+#   Default is 7 mm.
+extruder:
+#   The name of the extruder section this sensor is associated with.
+#   This parameter must be provided.
+switch_pin:
+#pause_on_runout:
+#runout_gcode:
+#insert_gcode:
+#event_delay:
+#pause_delay:
+#   See the "filament_switch_sensor" section for a description of the
+#   above parameters.
+```
+
 ## [tsl1401cl_filament_width_sensor]
 
 TSLl401CL Based Filament Width Sensor. See the
@@ -3631,8 +3661,9 @@ example.
 revision:
 #   The replicape hardware revision. Currently only revision "B3" is
 #   supported. This parameter must be provided.
-#enable_pin: !P9_41
-#   The replicape global enable pin. The default is !P9_41.
+#enable_pin: !gpio0_20
+#   The replicape global enable pin. The default is !gpio0_20 (aka
+#   P9_41).
 host_mcu:
 #   The name of the mcu config section that communicates with the
 #   Klipper "linux process" mcu instance. This parameter must be
@@ -3725,4 +3756,38 @@ I2C bus.
 #   The I2C speed (in Hz) to use when communicating with the device.
 #   On some micro-controllers changing this value has no effect. The
 #   default is 100000.
+```
+
+# Other Custom Modules
+
+## [palette2]
+
+Palette 2 multimaterial support - provides a tighter integration
+supporting Palette 2 devices in connected mode.
+
+This modules also requires `[virtual_sdcard]` and `[pause_resume]`
+for full functionality.
+
+If you use this module, do not use the Palette 2 plugin for
+Octoprint as they will conflict, and 1 will fail to initialize
+properly likely aborting your print.
+
+If you use Octoprint and stream gcode over the serial port instead of
+printing from virtual_sd, then remo **M1** and **M0** from *Pausing commands*
+in *Settings > Serial Connection > Firmware & protocol* will prevent
+the need to start print on the Palette 2 and unpausing in Octoprint
+for your print to begin.
+
+```
+[palette2]
+serial:
+#   The serial port to connect to the Palette 2.
+#baud: 250000
+#   The baud rate to use. The default is 250000.
+#feedrate_splice: 0.8
+#   The feedrate to use when splicing, default is 0.8
+#feedrate_normal: 1.0
+#   The feedrate to use after splicing, default is 1.0
+#auto_load_speed: 2
+#   Extrude feedrate when autoloading, default is 2 (mm/s)
 ```
